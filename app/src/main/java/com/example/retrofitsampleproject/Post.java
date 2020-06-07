@@ -6,12 +6,26 @@ public class Post {
 
     private int userId;
 
-    private int id;
+    /**
+     *  ID is generated on the server so it should be nullable
+     *  so that Json object does not include this field
+     */
+    private Integer id;
 
     private String title;
 
     @SerializedName("body")
     private String text;
+
+    /**
+     * ID is not included
+     * because it should be omitted when creating Json object
+     */
+    public Post(int userId, String title, String text) {
+        this.userId = userId;
+        this.title = title;
+        this.text = text;
+    }
 
     public int getUserID() {
         return userId;
