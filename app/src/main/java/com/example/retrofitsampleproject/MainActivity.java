@@ -5,12 +5,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -29,7 +35,29 @@ public class MainActivity extends AppCompatActivity {
 
         textView = findViewById(R.id.text_view_result);
 
+        /**
+        * Needed for logging of http requests
+        * */
+        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+
         OkHttpClient okHttpClient = new OkHttpClient.Builder()
+                /**
+                * Example of intercepting every request and adding custom header
+                * */
+                .addInterceptor(new Interceptor() {
+                    @NotNull
+                    @Override
+                    public okhttp3.Response intercept(@NotNull Chain chain) throws IOException {
+                        Request originalRequest = chain.request();
+                        Request newRequest = originalRequest.newBuilder()
+                                .header("Interceptor-header","nice header")
+                                .build();
+
+                        return chain.proceed(newRequest);
+                    }
+                })
+                .addInterceptor(loggingInterceptor)
                 .connectTimeout(1, TimeUnit.MINUTES)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .writeTimeout(15, TimeUnit.SECONDS)
@@ -46,9 +74,8 @@ public class MainActivity extends AppCompatActivity {
         //getPosts();
         //getComments();
         //createPost();
-        //updatePost();
-
-        deletePost();
+        updatePost();
+        //deletePost();
     }
 
     private void createPost() {
@@ -161,7 +188,14 @@ public class MainActivity extends AppCompatActivity {
     private void updatePost() {
         Post post = new Post(12, null, "updated text");
 
-        Call<Post> call = jsonPlaceHolderApi.patchPost(5, post);
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Dynamic-Header1", "abc");
+        headers.put("Dynamic-Header2", "qwe");
+
+        //Call<Post> call = jsonPlaceHolderApi.putPost("LOL", 5, post);
+
+        Call<Post> call = jsonPlaceHolderApi.patchPost(headers, 5, post);
+
         call.enqueue(new Callback<Post>() {
             @Override
             public void onResponse(Call<Post> call, Response<Post> response) {
